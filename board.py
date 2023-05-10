@@ -4,6 +4,8 @@ import numpy as np
 from collections import Counter
 EMPTY, BLACK, WHITE = '.', '*', 'o'
 PIECES = (EMPTY, BLACK, WHITE)
+TIE, WHITE_WIN, BLACK_WIN = 0, 1, -1
+
 TILES_TO_COLOR = {'B': '*', 'W': 'o'}
 PLAYERS = ('B', 'W')
 SIZE, TOTAL_SPOTS = 8, 64
@@ -37,6 +39,22 @@ class Board():
             return True
         else:
             return False
+
+    def find_winner(self):
+        black_count, white_count = 0, 0
+        for x in range(SIZE):
+            for y in range(SIZE):
+                if self.board[x][y] == BLACK:
+                    black_count += 1
+                elif self.board[x][y] == WHITE:
+                    white_count += 1
+        if white_count == black_count:
+            return TIE
+        elif white_count > black_count:
+            return WHITE_WIN
+        elif white_count < black_count:
+            return BLACK_WIN
+            
 
     def print_board(self):
         print(" ", end = " ")
@@ -83,8 +101,8 @@ class Board():
                 flipped_tiles.append([dx, dy])
         self.board[xstart][ystart] = EMPTY
         if len(flipped_tiles) != 0:
-            return flipped_tiles
-        return []
+            flipped_tiles.append([xstart, ystart])
+        return flipped_tiles
     def get_score(self):
         score = {'B': 0, 'W': 0}
         for x in range(SIZE):
@@ -109,26 +127,46 @@ class Board():
         elif not self.is_empty(x, y):
             return False
         tiles = self.is_legal_move(x, y, tile)
-        if tiles == []:
+        if not tiles:
             return False
         else:
             return True
-
+    
+    def flip_tiles(self, tiles_to_flip, cur_id):
+        tile = TILES_TO_COLOR[cur_id]
+        for x, y in tiles_to_flip:
+            self.board[x][y] = tile
+            
     def place_tile(self,  xstart, ystart, cur_id):
         tile = TILES_TO_COLOR[cur_id]
+        tiles_taken = self.is_legal_move(xstart, ystart, tile)
+        print(tiles_taken)
+        # print("tiles flipped are: " + str(tiles_taken))
+        # self.board[xstart][ystart] = tile
+        for (x, y) in tiles_taken:
+            self.board[x][y] = tile
+        self.score = self.get_score()
+        return True
+    
+    def undo_move(self, tiles_taken, cur_id):
         if cur_id == 'B':
             other_id = 'W'
         else:
             other_id = 'B'
-
-        tiles_taken = self.is_legal_move(xstart, ystart, tile)
-        print(tiles_taken)
-        self.board[xstart][ystart] = tile
-        for (x, y) in tiles_taken:
+        tile = TILES_TO_COLOR[other_id]
+        for i in range(len(tiles_taken) - 1):
+            x, y = tiles_taken[i][0], tiles_taken[i][1]
             self.board[x][y] = tile
-        self.score = self.get_score()
-        print("Score is: " + str(self.score))
-        return True
+        init_x, init_y = tiles_taken[-1]
+        self.board[init_x][init_y] = EMPTY
+
+    def show_valid_moves(self, id):
+        legal_moves = self.all_legal_moves(id)
+        for x,y in legal_moves:
+            x += 1
+            y += 1
+            print("[" + str(x) + "," + str(y) + "]", end = " ")
+        print()
 
     def make_player_move(self):
         while True:
@@ -137,11 +175,12 @@ class Board():
             is_valid = self.is_legal(x, y, TILES_TO_COLOR[self.player_id])
             if is_valid:
                 self.place_tile(x, y, self.player_id)
+                
+                return
             else:
-                print("INVALID")
-                sys.exit()
-            return
-
+                print("Invalid move. your valid moves are:", end = " ")
+                self.show_valid_moves(self.player_id)
+  
     def make_computer_move(self):
         legal_moves = self.all_legal_moves(self.computer_id)
         print(legal_moves)
@@ -149,37 +188,12 @@ class Board():
         xprint, yprint = x + 1, y + 1
         print("Computer chose: " + str([xprint, yprint]))
         self.place_tile(x, y, self.computer_id)
+
         return
 
 
-def main():
-    print("REVERSI")
-    board = Board('B', 'W')
-    turn = board.player_id
-    computer_turn = False
-    while True:
-        board.print_board()
-        print(board.is_terminal())
-        if not computer_turn:
-            # print(board.all_legal_moves(board.player_id))
-            board.make_player_move()
-            if board.all_legal_moves(board.computer_id) == []:
-                break
-            computer_turn = True
-            # break
-        else:
-            print("COMPUTER TURN")
-            board.make_computer_move()
-            # board.print_board()
-            if board.all_legal_moves(board.player_id) == []:
-                break
-            computer_turn = False
-
-
-if __name__ == "__main__":
-    main()
-
 # board = Board('B', 'W')
+# print(board.player_id)
 # board.print_board()
 # # board.board = [['o' for j in range(SIZE)] for i in range(SIZE)]
 # print(board.is_terminal())

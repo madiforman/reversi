@@ -2,16 +2,16 @@ import random
 import sys
 import numpy as np
 from collections import Counter
-EMPTY, BLACK, WHITE = '.', '*', 'o'
-PIECES = (EMPTY, BLACK, WHITE)
-TIE, WHITE_WIN, BLACK_WIN = 0, 1, -1
 
+EMPTY, BLACK, WHITE = '.', '*', 'o'
+TIE, WHITE_WIN, BLACK_WIN = 0, 1, -1
 TILES_TO_COLOR = {'B': '*', 'W': 'o'}
-PLAYERS = ('B', 'W')
 SIZE, TOTAL_SPOTS = 8, 64
 DIRECTIONS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1,1)]
+
 #1) The board is full, with no empty spaces 2) The board has coins of only one color 3) When no player has a valid move
 class Board():
+
     def __init__(self, player_id, computer_id):
         self.board = self.init_board()
         self.player_id = player_id
@@ -58,24 +58,23 @@ class Board():
 
     def print_board(self):
         print(" ", end = " ")
-        emDash = u'\u2014'
-        nums = [print(i, end=" ") for i in range(1, SIZE + 1)]
+        nums = [print("" + str(i), end=" ") for i in range(1, SIZE + 1)]
         print()
         for i in range(SIZE):
             print(i + 1, end=" ")
             for j in range(SIZE):
                 print(self.board[i][j], end=" ")
             print()
-            
+
     def is_on_board(self, x, y):
-        return 0 <= x < SIZE - 1 and 0 <= y < SIZE - 1
+        return 0 <= x < SIZE and 0 <= y < SIZE
 
     def is_empty(self, x, y):
         if self.board[x][y] == EMPTY:
             return True
         return False
 
-    def is_legal_move(self, xstart, ystart, tile):
+    def find_tiles_taken(self, xstart, ystart, tile):
         total = 0
         self.board[xstart][ystart] = tile
         flipped_tiles = []
@@ -103,6 +102,7 @@ class Board():
         if len(flipped_tiles) != 0:
             flipped_tiles.append([xstart, ystart])
         return flipped_tiles
+
     def get_score(self):
         score = {'B': 0, 'W': 0}
         for x in range(SIZE):
@@ -126,11 +126,10 @@ class Board():
             return False
         elif not self.is_empty(x, y):
             return False
-        tiles = self.is_legal_move(x, y, tile)
-        if not tiles:
+        tiles = self.find_tiles_taken(x, y, tile)
+        if len(tiles) == 0:
             return False
-        else:
-            return True
+        return True
     
     def flip_tiles(self, tiles_to_flip, cur_id):
         tile = TILES_TO_COLOR[cur_id]
@@ -139,10 +138,7 @@ class Board():
             
     def place_tile(self,  xstart, ystart, cur_id):
         tile = TILES_TO_COLOR[cur_id]
-        tiles_taken = self.is_legal_move(xstart, ystart, tile)
-        print(tiles_taken)
-        # print("tiles flipped are: " + str(tiles_taken))
-        # self.board[xstart][ystart] = tile
+        tiles_taken = self.find_tiles_taken(xstart, ystart, tile)
         for (x, y) in tiles_taken:
             self.board[x][y] = tile
         self.score = self.get_score()
@@ -170,74 +166,13 @@ class Board():
 
     def make_player_move(self):
         while True:
-            move = input("Enter a move x,y: ")
+            move = input("Enter a move x y: ")
             x, y = int(move[0]) - 1, int(move[2]) - 1
             is_valid = self.is_legal(x, y, TILES_TO_COLOR[self.player_id])
             if is_valid:
                 self.place_tile(x, y, self.player_id)
-                
                 return
             else:
                 print("Invalid move. your valid moves are:", end = " ")
                 self.show_valid_moves(self.player_id)
   
-    def make_computer_move(self):
-        legal_moves = self.all_legal_moves(self.computer_id)
-        print(legal_moves)
-        x, y = random.choice(legal_moves)
-        xprint, yprint = x + 1, y + 1
-        print("Computer chose: " + str([xprint, yprint]))
-        self.place_tile(x, y, self.computer_id)
-
-        return
-
-
-# board = Board('B', 'W')
-# print(board.player_id)
-# board.print_board()
-# # board.board = [['o' for j in range(SIZE)] for i in range(SIZE)]
-# print(board.is_terminal())
-# board.make_player_move()
-# board.print_board()
-# board.make_computer_move()
-# board.print_board()
-# board.print_board()
-# board.make_computer_move()
-# board.print_board()
-# # b.get_valid_moves(self, WHITE)
-#     def is_legal_move(self, tile, xstart, ystart):
-#         tiles_taken = []
-#         self.board[xstart][ystart] == tile
-#         if tile == '*':
-#             opp_tile = 'o'
-#         else:
-#             opp_tile = '*'
-    
-#         for xdir, ydir in DIRECTIONS:
-#             x, y = xstart, ystart
-#             x += xdir
-#             y += ydir
-#             if self.is_on_board(x, y) and self.board[x][y] == opp_tile:
-#                 x += xdir
-#                 y += ydir
-#                 if not self.is_on_board(x,y):
-#                     continue
-#                 while self.board[x][y] == opp_tile:
-#                     x += xdir
-#                     y += ydir
-#                     if not self.is_on_board(x, y):
-#                         break
-#                 if not self.is_on_board(x,y):
-#                     continue
-#                 if self.board[x][y] == opp_tile:
-#                     while True:
-#                         x -= xdir
-#                         y -= ydir
-#                         if x == xstart and y == ystart:
-#                             break
-#                         tiles_taken.append([x,y])
-#         self.board[xstart][ystart] = EMPTY
-#         if len(tiles_taken) == 0:
-#             print(len(tiles_taken))
-#             return False
-#         return tiles_taken
